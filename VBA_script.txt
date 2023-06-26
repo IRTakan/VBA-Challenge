@@ -1,0 +1,129 @@
+Sub Multiple_year_stock_data_testing1()
+
+    ' Run the same macro on multiple worksheets at the same time
+    For Each Worksheet In Worksheets
+        Worksheet.Activate
+
+    Dim Table_R As Long
+    Dim LastRow As Long
+    Dim Total_Vol As Double
+    Dim Opening_amount As Double
+    Dim Closing_amount As Double
+    Dim Yearly_Change As Double
+    Dim Percentage_Change As Double
+    Dim Ticker_symbol As String
+    Dim i As Long
+
+
+    ' Additional variables
+    Dim Greatest_Percent_Increase As Double
+    Dim Greatest_Percent_Decrease As Double
+    Dim Greatest_Total_Volume As Double
+    Dim Increase_Ticker As String
+    Dim Decrease_Ticker As String
+    Dim Volume_Ticker As String
+    
+    
+    Total_Vol = 0
+    
+    
+    Greatest_Percent_Increase = -1
+    Greatest_Percent_Decrease = 1000000 ' Arbitrary large number
+    Greatest_Total_Volume = -1
+    
+    Table_R = 2
+    LastRow = Cells(Rows.Count, 1).End(xlUp).Row
+
+    ' Initialize Opening_amount for the first ticker
+    Opening_amount = Cells(2, 3).Value
+
+    For i = 2 To LastRow
+        If Cells(i + 1, 1).Value <> Cells(i, 1).Value Or i = LastRow Then
+            ' If next row's ticker is different or if current row is the last row
+            
+            Ticker_symbol = Cells(i, 1).Value
+            Total_Vol = Total_Vol + Cells(i, 7).Value
+
+            ' Assign Closing_amount with the closing price of the current ticker
+            Closing_amount = Cells(i, 6).Value
+
+            Yearly_Change = Closing_amount - Opening_amount
+
+            ' Compute Percentage Change, handle division by zero
+            If Opening_amount <> 0 Then
+                Percentage_Change = (Yearly_Change / Opening_amount) * 100
+            Else
+                Percentage_Change = 0
+            End If
+
+
+            ' Check for greatest increase, decrease, and total volume
+            If Percentage_Change > Greatest_Percent_Increase Then
+                Greatest_Percent_Increase = Percentage_Change
+                Increase_Ticker = Ticker_symbol
+            End If
+            
+            If Percentage_Change < Greatest_Percent_Decrease Then
+                Greatest_Percent_Decrease = Percentage_Change
+                Decrease_Ticker = Ticker_symbol
+            End If
+
+            If Total_Vol > Greatest_Total_Volume Then
+                Greatest_Total_Volume = Total_Vol
+                Volume_Ticker = Ticker_symbol
+            End If
+
+
+            Range("I" & Table_R).Value = Ticker_symbol
+            Range("L" & Table_R).Value = Total_Vol
+            Range("J" & Table_R).Value = Yearly_Change
+            Range("K" & Table_R).Value = Percentage_Change
+
+            ' Add conditional formatting
+            With Range("J" & Table_R).FormatConditions
+                .Delete
+                .Add Type:=xlExpression, Formula1:="=J" & Table_R & "<0"
+                .Item(.Count).Interior.Color = RGB(255, 0, 0) ' Red
+                .Add Type:=xlExpression, Formula1:="=J" & Table_R & ">=0"
+                .Item(.Count).Interior.Color = RGB(0, 255, 0) ' Green
+            End With
+            With Range("K" & Table_R).FormatConditions
+                .Delete
+                .Add Type:=xlExpression, Formula1:="=K" & Table_R & "<0"
+                .Item(.Count).Interior.Color = RGB(255, 0, 0) ' Red
+                .Add Type:=xlExpression, Formula1:="=K" & Table_R & ">=0"
+                .Item(.Count).Interior.Color = RGB(0, 255, 0) ' Green
+            End With
+
+            Table_R = Table_R + 1
+            Total_Vol = 0
+
+            ' Reinitialize Opening_amount with the opening price of the next ticker
+            If i + 1 <= LastRow Then
+                Opening_amount = Cells(i + 1, 3).Value
+            End If
+
+        Else
+            Total_Vol = Total_Vol + Cells(i, 7).Value
+        End If
+    Next i
+    
+    
+    ' Populate greatest increase, decrease, and total volume
+    Range("O2").Value = "Greatest % Increase"
+    Range("P2").Value = Increase_Ticker
+    Range("Q2").Value = Greatest_Percent_Increase
+
+    Range("O3").Value = "Greatest % Decrease"
+    Range("P3").Value = Decrease_Ticker
+    Range("Q3").Value = Greatest_Percent_Decrease
+
+    Range("O4").Value = "Greatest Total Volume"
+    Range("P4").Value = Volume_Ticker
+    Range("Q4").Value = Greatest_Total_Volume
+    
+    Next Worksheet
+
+End Sub
+
+
